@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { redis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
