@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "pages:build": "npx vercel build --yes --env npm_config_legacy_peer_deps=true && npx @cloudflare/next-on-pages --skip-build",
-  "deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static --project-name=cidey",
-  "start": "next start",
-  "lint": "eslint"
-},
+    "dev": "next dev",
+    "build": "next build",
+    "pages:build": "npx vercel build --yes && npx @cloudflare/next-on-pages --skip-build",
+    "start": "next start",
+    "lint": "eslint"
+  },
   "dependencies": {
     "@upstash/redis": "^1.38.1",
     "nanoid": "^6.0.0",
