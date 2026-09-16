@@ -1,271 +1,201 @@
-import { redis } from '@/lib/redis';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
 import Script from 'next/script';
 
-export async function generateMetadata({ params }) {
-  const resolvedParams = await params;
-  return {
-    title: `cidey - ${resolvedParams.id}`,
-    description: 'Watch video on cidey',
-  };
-}
+export default function PlayerPage({ params }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [adBlockDetected, setAdBlockDetected] = useState(false);
+  const videoRef = useRef(null);
+  const lastPopunderTime = useRef(0);
 
-export default async function VideoPlayerPage({ params }) {
-  const resolvedParams = await params;
-  const id = resolvedParams.id;
+  // Ambil ID dari params URL
+  const { id } = params;
 
-  let rawData = null;
-  try {
-    rawData = await redis.get(id);
-  } catch (err) {
-    console.error('Failed to fetch from Redis:', err);
-  }
-
-  if (!rawData) {
-    notFound();
-  }
-
-  let videoUrl = '';
-  let redirectUrl = 'https://s.shopee.co.id/903zrG9yQZ'; // Default fallback
-  let popunderCode = '';
-  let socialBarCode = '';
-  let monetagCode = '';
-  let bannerCode = ''; // Inisialisasi variabel Banner
-  let vignetteCode = ''; // Inisialisasi variabel Vignette
-
-  if (typeof rawData === 'object' && rawData !== null) {
-    videoUrl = rawData.videoUrl || '';
-    if (rawData.redirectUrl) redirectUrl = rawData.redirectUrl;
-    if (rawData.popunderCode) popunderCode = rawData.popunderCode;
-    if (rawData.socialBarCode) socialBarCode = rawData.socialBarCode;
-    if (rawData.monetagCode) monetagCode = rawData.monetagCode;
-    if (rawData.bannerCode) bannerCode = rawData.bannerCode; // Assign Banner
-    if (rawData.vignetteCode) vignetteCode = rawData.vignetteCode; // Assign Vignette
-  } else if (typeof rawData === 'string') {
-    if (rawData.startsWith('{')) {
+  // 1. Fetch Data Video dari API
+  useEffect(() => {
+    async function fetchData() {
       try {
-        const parsed = JSON.parse(rawData);
-        videoUrl = parsed.videoUrl || '';
-        if (parsed.redirectUrl) redirectUrl = parsed.redirectUrl;
-        if (parsed.popunderCode) popunderCode = parsed.popunderCode;
-        if (parsed.socialBarCode) socialBarCode = parsed.socialBarCode;
-        if (parsed.monetagCode) monetagCode = parsed.monetagCode;
-        if (parsed.bannerCode) bannerCode = parsed.bannerCode; // Assign Banner
-        if (parsed.vignetteCode) vignetteCode = parsed.vignetteCode; // Assign Vignette
-      } catch (e) {
-        videoUrl = rawData;
+        const res = await fetch(`/api/video/${id}`);
+        if (!res.ok) {
+          throw new Error('Video tidak ditemukan atau link sudah kedaluwarsa.');
+        }
+        const result = await res.json();
+        setData(result);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    } else {
-      videoUrl = rawData;
     }
+    fetchData();
+  }, [id]);
+
+  // 2. Anti-AdBlock Detector
+  useEffect(() => {
+    const checkAdBlock = async () => {
+      try {
+        // Coba panggil URL pelacak iklan populer untuk mengetes pemblokiran
+        const res = await fetch(
+          'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+          { method: 'HEAD', mode: 'no-cors' }
+        );
+      } catch (e) {
+        // Jika gagal dipanggil, indikasi kuat AdBlock aktif
+        setAdBlockDetected(true);
+        if (videoRef.current) {
+          videoRef.current.pause();
+        }
+      }
+    };
+
+    checkAdBlock();
+  }, []);
+
+  // 3. Global Click Handler (Shopee Affiliate / Smartlink) dengan Cooldown 30 Detik
+  useEffect(() => {
+    if (!data?.redirectUrl) return;
+
+    const handleGlobalClick = (e) => {
+      // Biarkan klik di elemen tombol share/report berjalan normal tanpa memicu popunder
+      if (e.target.closest('button') || e.target.closest('a')) return;
+
+      const now = Date.now();
+      const COOLDOWN_MS = 30000; // Jeda 30 detik untuk menjaga kualitas CPM
+
+      if (now - lastPopunderTime.current >= COOLDOWN_MS) {
+        lastPopunderTime.current = now;
+        window.open(data.redirectUrl, '_blank', 'noopener,noreferrer');
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick, true);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+    };
+  }, [data]);
+
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: '#0a0a0a', color: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        <p style={{ color: '#888' }}>Memuat player...</p>
+      </div>
+    );
   }
 
-  const proxyVideoUrl = `/api/proxy-video?id=${id}`;
+  if (error || !data) {
+    return (
+      <div style={{ backgroundColor: '#0a0a0a', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>Video Tidak Tersedia</h2>
+        <p style={{ color: '#666', fontSize: '14px' }}>{error || 'Link tidak valid.'}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans antialiased selection:bg-slate-200">
+    <div style={{ backgroundColor: '#0d0d0d', color: '#e5e5e5', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       
-      {/* Dynamic Ad Scripts Injection */}
-      {socialBarCode && (
-        <div dangerouslySetInnerHTML={{ __html: socialBarCode }} />
+      {/* Dynamic Ad Injections */}
+      {data.popunderCode && (
+        <div dangerouslySetInnerHTML={{ __html: data.popunderCode }} />
       )}
-      {popunderCode && (
-        <div dangerouslySetInnerHTML={{ __html: popunderCode }} />
+      {data.socialBarCode && (
+        <div dangerouslySetInnerHTML={{ __html: data.socialBarCode }} />
       )}
-      {monetagCode && (
-        <div dangerouslySetInnerHTML={{ __html: monetagCode }} />
+      {data.monetagCode && (
+        <div dangerouslySetInnerHTML={{ __html: data.monetagCode }} />
       )}
-      {vignetteCode && (
-        <div dangerouslySetInnerHTML={{ __html: vignetteCode }} />
+      {data.vignetteCode && (
+        <div dangerouslySetInnerHTML={{ __html: data.vignetteCode }} />
       )}
 
-      {/* Header Bar (Videy 1:1 Style) */}
-      <header className="w-full max-w-7xl mx-auto px-6 sm:px-10 py-5 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold tracking-tight text-black hover:opacity-80 transition-opacity font-sans">
-          cidey
-        </Link>
+      {/* Overlay Anti-AdBlock */}
+      {adBlockDetected && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center' }}>
+          <h2 style={{ color: '#ef4444', marginBottom: '12px', fontSize: '22px' }}>AdBlocker Terdeteksi!</h2>
+          <p style={{ color: '#aaa', maxWidth: '420px', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+            Harap nonaktifkan AdBlocker / Pemblokir Iklan pada browser Anda untuk melanjutkan pemutaran video.
+          </p>
+          <button onClick={() => window.location.reload()} style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Saya Sudah Mematikan AdBlock
+          </button>
+        </div>
+      )}
 
-        <a
-          id="upload-btn"
-          href={redirectUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-5 py-2 rounded-full bg-[#0d0e15] hover:bg-slate-800 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
-        >
-          Upload
-        </a>
+      {/* Header / Brand Navbar */}
+      <header style={{ borderBottom: '1px solid #1f1f1f', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '-0.5px', margin: 0, color: '#fff' }}>cidey</h1>
+        <span style={{ fontSize: '12px', color: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+          ● Secure Proxy Stream
+        </span>
       </header>
 
-      {/* Main Video Viewport (Centered) */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-4 sm:py-8 flex flex-col items-center justify-center">
+      {/* Main Container */}
+      <main style={{ maxWidth: '840px', margin: '0 auto', padding: '24px 16px' }}>
         
-        {/* Anti-AdBlock Warning Overlay (Awalnya Disembunyikan) */}
-        <div id="adblock-warning" style={{ display: 'none' }} className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-sm flex-col items-center justify-center p-6 text-center">
-          <div className="bg-slate-800 p-8 rounded-2xl max-w-md w-full shadow-2xl border border-slate-700">
-            <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-white mb-3">AdBlock Terdeteksi</h2>
-            <p className="text-slate-300 mb-6 text-sm">
-              Sistem kami mendeteksi penggunaan ekstensi pemblokir iklan (AdBlock). Mohon matikan AdBlock atau whitelist website ini untuk memutar video.
-            </p>
-            <button id="reload-btn" type="button" className="w-full px-5 py-3 rounded-xl bg-white hover:bg-slate-200 text-slate-900 font-bold transition-all">
-              Muat Ulang Halaman
-            </button>
-          </div>
+        {/* Video Player Box */}
+        <div style={{ backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', border: '1px solid #222', position: 'relative', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
+          <video
+            ref={videoRef}
+            src={data.videoUrl}
+            controls
+            controlsList="nodownload"
+            style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '70vh' }}
+          />
         </div>
 
-        {/* Video Container with ID for Click Popunder Listener */}
-        <div id="video-wrapper" className="relative max-w-full flex flex-col items-center justify-center cursor-pointer">
-          <div className="relative rounded-2xl overflow-hidden bg-black shadow-md flex items-center justify-center max-h-[75vh]">
-            <video
-              id="main-player"
-              controls
-              autoPlay
-              playsInline
-              preload="metadata"
-              className="max-h-[75vh] w-auto max-w-full object-contain rounded-2xl"
+        {/* Video Info & Actions */}
+        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ fontSize: '15px', fontWeight: '500', margin: 0, color: '#fff' }}>Shared Stream #{id}</h2>
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>Bypassed via Cidey Engine • Full Speed</p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link video telah disalin!');
+              }}
+              style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#ccc', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
             >
-              <source src={proxyVideoUrl} type="video/mp4" />
-              Browser Anda tidak mendukung pemutaran video ini.
-            </video>
-          </div>
-
-          {/* Share Video Pill Button (Videy style) */}
-          <div className="mt-5 flex items-center justify-center">
-            <button
-              id="share-btn"
-              type="button"
-              className="px-5 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2 border border-slate-200/60 shadow-sm active:scale-95 cursor-pointer"
-            >
-              <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              <span className="share-txt">Share video</span>
+              Share Link
             </button>
+
+            {data.redirectUrl && (
+              <a
+                href={data.redirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ backgroundColor: '#fff', color: '#000', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'inline-block' }}
+              >
+                Fast Download
+              </a>
+            )}
           </div>
         </div>
 
-        {/* Banner Ads Slot - Centered */}
-        {bannerCode && (
-          <div className="mt-8 flex items-center justify-center w-full max-w-[300px] mx-auto overflow-hidden rounded-lg shadow-sm">
-            <div dangerouslySetInnerHTML={{ __html: bannerCode }} />
+        {/* Dedicated Banner Ad Placement (300x250) */}
+        {data.bannerCode ? (
+          <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span style={{ fontSize: '10px', color: '#444', marginBottom: '8px', letterSpacing: '1px', textTransform: 'uppercase' }}>Advertisement</span>
+            <div dangerouslySetInnerHTML={{ __html: data.bannerCode }} />
           </div>
-        )}
-
-        {/* Developer Branding */}
-        <div className="mt-12 text-center">
-          <p className="text-[11px] tracking-widest font-extrabold text-slate-400 uppercase">
-            DEVELOPED BY ADMIN
-          </p>
-        </div>
+        ) : null}
 
       </main>
 
-      {/* Script Handler untuk Smartlink Popunder, Share Button & Anti-AdBlock */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              var SMARTLINK_URL = ${JSON.stringify(redirectUrl)};
-              var COOLDOWN_MS = 30000; // UPDATE JEDA KE 30 DETIK (30000 ms)
-              var lastTriggered = 0;
-
-              // Anti-AdBlock Detector
-              function checkAdBlock() {
-                // Membuat elemen "Umpan" (Bait) yang biasa diblokir AdBlocker
-                var bait = document.createElement('div');
-                bait.className = 'pub_300x250 pub_300x250m pub_728x90 text-ad textAd text_ad text_ads text-ads text-ad-links ad-banner adbox sponsor';
-                bait.style.position = 'absolute';
-                bait.style.left = '-999px';
-                bait.style.top = '-999px';
-                bait.style.height = '10px';
-                bait.style.display = 'block';
-                document.body.appendChild(bait);
-
-                setTimeout(function() {
-                  var adBlockEnabled = false;
-                  var baitStyle = window.getComputedStyle(bait);
-                  // Jika AdBlock menghapus atau menyembunyikan umpan, maka terdeteksi
-                  if (bait.offsetHeight === 0 || baitStyle.display === 'none' || baitStyle.visibility === 'hidden') {
-                    adBlockEnabled = true;
-                  }
-                  bait.remove(); // Hapus jejak umpan
-
-                  if (adBlockEnabled) {
-                    var warning = document.getElementById('adblock-warning');
-                    var video = document.getElementById('main-player');
-                    
-                    if (warning) warning.style.display = 'flex'; // Tampilkan Overlay Block
-                    if (video) video.pause(); // Hentikan pemutaran video
-                  }
-                }, 300); // Cek setelah 300ms halaman diload
-              }
-
-              function triggerSmartlink() {
-                var now = Date.now();
-                if (now - lastTriggered > COOLDOWN_MS) {
-                  lastTriggered = now;
-                  window.open(SMARTLINK_URL, '_blank');
-                }
-              }
-
-              function initEvents() {
-                var uploadBtn = document.getElementById('upload-btn');
-                if (uploadBtn) {
-                  uploadBtn.addEventListener('click', function(e) {
-                    if (!uploadBtn.hasAttribute('href') || uploadBtn.getAttribute('href') === '') {
-                      e.preventDefault();
-                      window.open(SMARTLINK_URL, '_blank');
-                    }
-                  });
-                }
-
-                var btn = document.getElementById('share-btn');
-                if (btn) {
-                  btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(window.location.href);
-                    var txt = btn.querySelector('.share-txt');
-                    if (txt) {
-                      var orig = txt.textContent;
-                      txt.textContent = 'Link Tersalin!';
-                      setTimeout(function() {
-                        txt.textContent = orig;
-                      }, 2000);
-                    }
-                  });
-                }
-
-                var reloadBtn = document.getElementById('reload-btn');
-                if (reloadBtn) {
-                  reloadBtn.addEventListener('click', function() {
-                    window.location.reload();
-                  });
-                }
-
-                document.addEventListener('click', function(e) {
-                  if (e.target.closest('#share-btn') || e.target.closest('#upload-btn') || e.target.closest('#reload-btn')) {
-                    return;
-                  }
-                  triggerSmartlink();
-                }, true);
-              }
-
-              if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                  initEvents();
-                  checkAdBlock(); // Jalankan proteksi Anti-AdBlock
-                });
-              } else {
-                initEvents();
-                checkAdBlock();
-              }
-            })();
-          `,
-        }}
-      />
+      {/* Footer Compliance Standards */}
+      <footer style={{ marginTop: '60px', borderTop: '1px solid #1a1a1a', padding: '24px 16px', textAlign: 'center', fontSize: '12px', color: '#555' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px' }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); alert('Cidey Engine: Proxy Stream Delivery Platform.'); }} style={{ color: '#777', textDecoration: 'none' }}>Terms of Service</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); alert('We respect privacy. No personal data logged.'); }} style={{ color: '#777', textDecoration: 'none' }}>Privacy Policy</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); alert('For copyright inquiries or video takedown requests, contact the domain administrator.'); }} style={{ color: '#777', textDecoration: 'none' }}>DMCA / Report Takedown</a>
+        </div>
+        <p style={{ margin: 0, color: '#444' }}>© 2026 Cidey Engine. All rights reserved.</p>
+      </footer>
 
     </div>
   );

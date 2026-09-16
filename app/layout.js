@@ -18,8 +18,8 @@ export const metadata = {
     icon: "blob:https://tools.kommodo.ai/314a93fe-995d-4244-bc9e-4e2beb74bde5",
   },
   other: {
-    monetag: "15c7bbb10b56dfcf02181e57eace10cc",
-    "profiton-domain-verification": "a35490b956521e3fb355669997f13fb623c2e04197c242845412d18e7f78c08a",
+    monetag: "96c630df9f532399eb8c5b7b2c2d805d",
+    "profiton-domain-verification": "85362818e8f6a71c6087d03c58415e8550c3b10bda84bc32d065e27a094b348e",
   },
 };
 
