@@ -5,6 +5,41 @@ export const runtime = 'edge';
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 
+// Komponen helper: dangerouslySetInnerHTML TIDAK mengeksekusi tag <script>
+// (ini keterbatasan browser, bukan bug React). Komponen ini me-recreate
+// setiap <script> pakai document.createElement supaya beneran dieksekusi.
+function AdScript({ html }) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!html || !containerRef.current) return;
+    const container = containerRef.current;
+    container.innerHTML = '';
+
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    Array.from(temp.childNodes).forEach((node) => {
+      if (node.tagName === 'SCRIPT') {
+        const script = document.createElement('script');
+        Array.from(node.attributes).forEach((attr) => {
+          script.setAttribute(attr.name, attr.value);
+        });
+        script.text = node.textContent;
+        container.appendChild(script);
+      } else {
+        container.appendChild(node.cloneNode(true));
+      }
+    });
+
+    return () => {
+      container.innerHTML = '';
+    };
+  }, [html]);
+
+  return <div ref={containerRef} />;
+}
+
 export default function PlayerPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -103,18 +138,10 @@ export default function PlayerPage() {
     <div style={{ backgroundColor: '#0d0d0d', color: '#e5e5e5', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       
       {/* Dynamic Ad Injections */}
-      {data.popunderCode && (
-        <div dangerouslySetInnerHTML={{ __html: data.popunderCode }} />
-      )}
-      {data.socialBarCode && (
-        <div dangerouslySetInnerHTML={{ __html: data.socialBarCode }} />
-      )}
-      {data.monetagCode && (
-        <div dangerouslySetInnerHTML={{ __html: data.monetagCode }} />
-      )}
-      {data.vignetteCode && (
-        <div dangerouslySetInnerHTML={{ __html: data.vignetteCode }} />
-      )}
+      {data.popunderCode && <AdScript html={data.popunderCode} />}
+      {data.socialBarCode && <AdScript html={data.socialBarCode} />}
+      {data.monetagCode && <AdScript html={data.monetagCode} />}
+      {data.vignetteCode && <AdScript html={data.vignetteCode} />}
 
       {/* Overlay Anti-AdBlock */}
       {adBlockDetected && (
@@ -186,7 +213,7 @@ export default function PlayerPage() {
         {data.bannerCode ? (
           <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <span style={{ fontSize: '10px', color: '#444', marginBottom: '8px', letterSpacing: '1px', textTransform: 'uppercase' }}>Advertisement</span>
-            <div dangerouslySetInnerHTML={{ __html: data.bannerCode }} />
+            <AdScript html={data.bannerCode} />
           </div>
         ) : null}
 
