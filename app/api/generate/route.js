@@ -25,6 +25,7 @@ export async function POST(request) {
     const finalMonetag = monetagCode && monetagCode.trim() ? monetagCode.trim() : '';
     const finalBanner = bannerCode && bannerCode.trim() ? bannerCode.trim() : '';
     const finalVignette = vignetteCode && vignetteCode.trim() ? vignetteCode.trim() : '';
+    
     const host = request.headers.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
@@ -46,7 +47,6 @@ export async function POST(request) {
         vignetteCode: finalVignette,
       };
 
-      // PERBAIKAN: Oper object langsung tanpa JSON.stringify
       await redis.set(id, dataToStore);
 
       results.push({
