@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function HomePage() {
   const [videoUrlsInput, setVideoUrlsInput] = useState('');
@@ -15,18 +15,16 @@ export default function HomePage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
-  const [history, setHistory] = useState([]);
-
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('cidey_history');
-    if (savedHistory) {
-      try {
-        setHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error('Failed to parse history:', e);
-      }
+  const [history, setHistory] = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const savedHistory = localStorage.getItem('cidey_history');
+      return savedHistory ? JSON.parse(savedHistory) : [];
+    } catch (e) {
+      console.error('Failed to parse history:', e);
+      return [];
     }
-  }, []);
+  });
 
   const handleGenerate = async (e) => {
     e.preventDefault();
