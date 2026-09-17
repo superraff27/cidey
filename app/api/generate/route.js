@@ -19,14 +19,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'URL video wajib diisi' }, { status: 400 });
     }
 
-    const defaultRedirect = 'https://s.shopee.co.id/903zrG9yQZ';
-    const finalRedirect = redirectUrl && redirectUrl.trim() ? redirectUrl.trim() : defaultRedirect;
+    const finalRedirect = redirectUrl && redirectUrl.trim() ? redirectUrl.trim() : '';
     const finalPopunder = popunderCode && popunderCode.trim() ? popunderCode.trim() : '';
     const finalSocialBar = socialBarCode && socialBarCode.trim() ? socialBarCode.trim() : '';
     const finalMonetag = monetagCode && monetagCode.trim() ? monetagCode.trim() : '';
     const finalBanner = bannerCode && bannerCode.trim() ? bannerCode.trim() : '';
     const finalVignette = vignetteCode && vignetteCode.trim() ? vignetteCode.trim() : '';
-    
     const host = request.headers.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
