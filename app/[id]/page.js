@@ -1,8 +1,6 @@
 'use client';
 
-export const runtime = 'edge';
-
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import Script from 'next/script';
 
 export default function PlayerPage({ params }) {
@@ -13,8 +11,9 @@ export default function PlayerPage({ params }) {
   const videoRef = useRef(null);
   const lastPopunderTime = useRef(0);
 
-  // Ambil ID dari params URL
-  const { id } = params;
+  // Ambil ID dari params URL menggunakan React.use() (Wajib untuk Next.js 15)
+  const unwrappedParams = use(params);
+  const id = unwrappedParams.id;
 
   // 1. Fetch Data Video dari API
   useEffect(() => {
