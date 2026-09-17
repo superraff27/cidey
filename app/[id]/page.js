@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef, use } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import Script from 'next/script';
 
-export default function PlayerPage({ params }) {
+export default function PlayerPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,12 +12,14 @@ export default function PlayerPage({ params }) {
   const videoRef = useRef(null);
   const lastPopunderTime = useRef(0);
 
-  // Ambil ID dari params URL menggunakan React.use() (Wajib untuk Next.js 15)
-  const unwrappedParams = use(params);
-  const id = unwrappedParams.id;
+  // Ambil ID dari params URL menggunakan hook useParams (stabil untuk Client Component)
+  const params = useParams();
+  const id = params?.id;
 
   // 1. Fetch Data Video dari API
   useEffect(() => {
+    if (!id) return;
+
     async function fetchData() {
       try {
         const res = await fetch(`/api/video/${id}`);
