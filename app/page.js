@@ -6,6 +6,7 @@ export default function HomePage() {
   const [videoUrlsInput, setVideoUrlsInput] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
   const [popunderCode, setPopunderCode] = useState('');
+  const [mondiadPopunderCode, setMondiadPopunderCode] = useState('');
   const [socialBarCode, setSocialBarCode] = useState('');
   const [monetagCode, setMonetagCode] = useState('');
   const [bannerCode, setBannerCode] = useState(''); // State baru untuk Banner Adsterra
@@ -47,6 +48,7 @@ export default function HomePage() {
           videoUrls: urlsArray,
           redirectUrl: redirectUrl.trim(),
           popunderCode: popunderCode.trim(),
+          mondiadPopunderCode: mondiadPopunderCode.trim(),
           socialBarCode: socialBarCode.trim(),
           monetagCode: monetagCode.trim(),
           bannerCode: bannerCode.trim(), // Kirim data Banner ke API
@@ -165,6 +167,20 @@ export default function HomePage() {
               value={popunderCode}
               onChange={(e) => setPopunderCode(e.target.value)}
               placeholder="<script>...</script>"
+              className="w-full p-3.5 bg-[#262626] border border-[#3a3a3a] rounded-lg text-white placeholder-[#666] text-[14px] font-mono focus:outline-none focus:border-[#666] transition-colors"
+            />
+          </div>
+
+          {/* Input: Mondiad Popunder */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] font-medium text-[#d4d4d4]">
+              Script Mondiad popunder (opsional)
+            </label>
+            <textarea
+              rows={3}
+              value={mondiadPopunderCode}
+              onChange={(e) => setMondiadPopunderCode(e.target.value)}
+              placeholder='<script async src="https://ds.mrmnd.com/xxxx.js"></script>'
               className="w-full p-3.5 bg-[#262626] border border-[#3a3a3a] rounded-lg text-white placeholder-[#666] text-[14px] font-mono focus:outline-none focus:border-[#666] transition-colors"
             />
           </div>

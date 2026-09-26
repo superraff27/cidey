@@ -39,6 +39,7 @@ export async function GET(request, { params }) {
       originalVideoUrl: data.videoUrl || '',
       redirectUrl: data.redirectUrl || '',
       popunderCode: data.popunderCode || '',
+      mondiadPopunderCode: data.mondiadPopunderCode || '',
       socialBarCode: data.socialBarCode || '',
       monetagCode: data.monetagCode || '',
       bannerCode: data.bannerCode || '',

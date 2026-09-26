@@ -6,7 +6,7 @@ import { nanoid } from 'nanoid';
 
 export async function POST(request) {
   try {
-    const { videoUrl, videoUrls, redirectUrl, popunderCode, socialBarCode, monetagCode, bannerCode, vignetteCode } = await request.json(); // Tambahkan vignetteCode
+    const { videoUrl, videoUrls, redirectUrl, popunderCode, mondiadPopunderCode, socialBarCode, monetagCode, bannerCode, vignetteCode } = await request.json(); // Tambahkan vignetteCode
 
     // Mendukung input array (bulk) maupun single string
     let urlsToProcess = [];
@@ -22,6 +22,7 @@ export async function POST(request) {
 
     const finalRedirect = redirectUrl && redirectUrl.trim() ? redirectUrl.trim() : '';
     const finalPopunder = popunderCode && popunderCode.trim() ? popunderCode.trim() : '';
+    const finalMondiadPopunder = mondiadPopunderCode && mondiadPopunderCode.trim() ? mondiadPopunderCode.trim() : '';
     const finalSocialBar = socialBarCode && socialBarCode.trim() ? socialBarCode.trim() : '';
     const finalMonetag = monetagCode && monetagCode.trim() ? monetagCode.trim() : '';
     const finalBanner = bannerCode && bannerCode.trim() ? bannerCode.trim() : ''; // Parse Banner Code
@@ -43,6 +44,7 @@ export async function POST(request) {
         videoUrl: trimmedUrl,
         redirectUrl: finalRedirect,
         popunderCode: finalPopunder,
+        mondiadPopunderCode: finalMondiadPopunder,
         socialBarCode: finalSocialBar,
         monetagCode: finalMonetag,
         bannerCode: finalBanner, // Simpan ke Redis
