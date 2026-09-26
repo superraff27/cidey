@@ -42,9 +42,31 @@ export function middleware(request) {
 
   const isGeneratorPath = pathname === '/' || pathname.startsWith('/api/generate');
 
-  // Diakses dari domain PLAYER tapi minta halaman generator -> lempar ke domain generator
-  if (isPlayerHost && isGeneratorPath && generatorDomain) {
-    return NextResponse.redirect(`https://${generatorDomain}${pathname}`);
+  // Diakses dari domain PLAYER tapi minta halaman generator -> tampilkan error 404,
+  // JANGAN redirect (supaya orang lain tidak tahu/bisa akses domain generator-nya)
+  if (isPlayerHost && isGeneratorPath) {
+    return new NextResponse(
+      `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>404 - Halaman Tidak Ditemukan</title>
+<style>
+  body { background:#0a0a0a; color:#e5e5e5; font-family: system-ui, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+  .box { text-align:center; }
+  h1 { font-size:22px; font-weight:600; margin-bottom:8px; }
+  p { color:#888; font-size:14px; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>404 - Halaman Tidak Ditemukan</h1>
+    <p>Halaman yang kamu cari tidak tersedia.</p>
+  </div>
+</body>
+</html>`,
+      { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } }
+    );
   }
 
   // Diakses dari domain GENERATOR tapi minta halaman player (buka link video langsung disini) -> lempar ke domain player
