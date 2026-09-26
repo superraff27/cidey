@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 // Path yang di-exclude dari pengecekan middleware (asset statis, dll)
 export const config = {
@@ -9,8 +10,20 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
-  const playerDomain = process.env.NEXT_PUBLIC_PLAYER_DOMAIN; // contoh: "nontonvid.com"
-  const generatorDomain = process.env.NEXT_PUBLIC_GENERATOR_DOMAIN; // contoh: "toolsaya.com"
+  // PENTING: di dalam Middleware, process.env kadang tidak ter-populate
+  // dengan benar oleh @cloudflare/next-on-pages. Jadi kita coba ambil
+  // dari getRequestContext().env dulu (cara yang benar untuk Middleware),
+  // dengan fallback ke process.env untuk local dev (next dev).
+  let playerDomain;
+  let generatorDomain;
+  try {
+    const ctxEnv = getRequestContext().env;
+    playerDomain = ctxEnv.NEXT_PUBLIC_PLAYER_DOMAIN || process.env.NEXT_PUBLIC_PLAYER_DOMAIN;
+    generatorDomain = ctxEnv.NEXT_PUBLIC_GENERATOR_DOMAIN || process.env.NEXT_PUBLIC_GENERATOR_DOMAIN;
+  } catch (e) {
+    playerDomain = process.env.NEXT_PUBLIC_PLAYER_DOMAIN;
+    generatorDomain = process.env.NEXT_PUBLIC_GENERATOR_DOMAIN;
+  }
 
   // Kalau kedua env var belum diset, jangan block apapun
   // (supaya development lokal / domain .pages.dev default tetap jalan normal seperti biasa)
