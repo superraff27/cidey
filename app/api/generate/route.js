@@ -28,9 +28,12 @@ export async function POST(request) {
     const finalBanner = bannerCode && bannerCode.trim() ? bannerCode.trim() : ''; // Parse Banner Code
     const finalVignette = vignetteCode && vignetteCode.trim() ? vignetteCode.trim() : ''; // Parse Vignette Code
     
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const baseUrl = `${protocol}://${host}`;
+    const requestHost = request.headers.get('host') || 'localhost:3000';
+    const protocol = requestHost.includes('localhost') ? 'http' : 'https';
+    const playerDomain = process.env.NEXT_PUBLIC_PLAYER_DOMAIN;
+    // Kalau NEXT_PUBLIC_PLAYER_DOMAIN diset, link video SELALU pakai domain itu,
+    // walau request generate-nya datang dari domain generator yang berbeda.
+    const baseUrl = playerDomain ? `https://${playerDomain}` : `${protocol}://${requestHost}`;
 
     const results = [];
 
