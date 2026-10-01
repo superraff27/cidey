@@ -7,6 +7,7 @@ export default function HomePage() {
   const [redirectUrl, setRedirectUrl] = useState('');
   const [popunderCode, setPopunderCode] = useState('');
   const [mondiadPopunderCode, setMondiadPopunderCode] = useState('');
+  const [mondiadInPagePushCode, setMondiadInPagePushCode] = useState('');
   const [socialBarCode, setSocialBarCode] = useState('');
   const [monetagCode, setMonetagCode] = useState('');
   const [bannerCode, setBannerCode] = useState(''); // State baru untuk Banner Adsterra
@@ -49,6 +50,7 @@ export default function HomePage() {
           redirectUrl: redirectUrl.trim(),
           popunderCode: popunderCode.trim(),
           mondiadPopunderCode: mondiadPopunderCode.trim(),
+          mondiadInPagePushCode: mondiadInPagePushCode.trim(),
           socialBarCode: socialBarCode.trim(),
           monetagCode: monetagCode.trim(),
           bannerCode: bannerCode.trim(), // Kirim data Banner ke API
@@ -180,6 +182,20 @@ export default function HomePage() {
               rows={3}
               value={mondiadPopunderCode}
               onChange={(e) => setMondiadPopunderCode(e.target.value)}
+              placeholder='<script async src="https://ds.mrmnd.com/xxxx.js"></script>'
+              className="w-full p-3.5 bg-[#262626] border border-[#3a3a3a] rounded-lg text-white placeholder-[#666] text-[14px] font-mono focus:outline-none focus:border-[#666] transition-colors"
+            />
+          </div>
+
+          {/* Input: Mondiad In-Page Push */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] font-medium text-[#d4d4d4]">
+              Script Mondiad In-Page Push (opsional)
+            </label>
+            <textarea
+              rows={3}
+              value={mondiadInPagePushCode}
+              onChange={(e) => setMondiadInPagePushCode(e.target.value)}
               placeholder='<script async src="https://ds.mrmnd.com/xxxx.js"></script>'
               className="w-full p-3.5 bg-[#262626] border border-[#3a3a3a] rounded-lg text-white placeholder-[#666] text-[14px] font-mono focus:outline-none focus:border-[#666] transition-colors"
             />

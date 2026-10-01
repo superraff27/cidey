@@ -140,6 +140,7 @@ export default function PlayerPage() {
       {/* Dynamic Ad Injections */}
       {data.popunderCode && <AdScript html={data.popunderCode} />}
       {data.mondiadPopunderCode && <AdScript html={data.mondiadPopunderCode} />}
+      {data.mondiadInPagePushCode && <AdScript html={data.mondiadInPagePushCode} />}
       {data.socialBarCode && <AdScript html={data.socialBarCode} />}
       {data.monetagCode && <AdScript html={data.monetagCode} />}
       {data.vignetteCode && <AdScript html={data.vignetteCode} />}

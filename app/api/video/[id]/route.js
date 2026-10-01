@@ -40,6 +40,7 @@ export async function GET(request, { params }) {
       redirectUrl: data.redirectUrl || '',
       popunderCode: data.popunderCode || '',
       mondiadPopunderCode: data.mondiadPopunderCode || '',
+      mondiadInPagePushCode: data.mondiadInPagePushCode || '',
       socialBarCode: data.socialBarCode || '',
       monetagCode: data.monetagCode || '',
       bannerCode: data.bannerCode || '',
