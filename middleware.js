@@ -38,7 +38,7 @@ export function middleware(request) {
   const isPlayerPath =
     pathname.startsWith('/api/video') ||
     pathname.startsWith('/api/proxy-video') ||
-    /^\/[a-zA-Z0-9_-]{6}$/.test(pathname);
+    /^\/[a-zA-Z0-9_-]{6}(\.mp4)?$/i.test(pathname);
 
   const isGeneratorPath = pathname === '/' || pathname.startsWith('/api/generate');
 

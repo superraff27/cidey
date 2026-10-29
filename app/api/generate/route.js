@@ -61,7 +61,7 @@ export async function POST(request) {
       results.push({
         id,
         originalUrl: trimmedUrl,
-        generatedUrl: `${baseUrl}/${id}`,
+        generatedUrl: `${baseUrl}/${id}.mp4`,
       });
     }
 

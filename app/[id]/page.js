@@ -50,7 +50,7 @@ export default function PlayerPage() {
 
   // Ambil ID dari params URL menggunakan hook useParams (stabil untuk Client Component)
   const params = useParams();
-  const id = params?.id;
+  const id = params?.id?.replace(/\.mp4$/i, '');
 
   // 1. Fetch Data Video dari API
   useEffect(() => {

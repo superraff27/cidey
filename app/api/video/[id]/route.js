@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 
 export async function GET(request, { params }) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = rawId?.replace(/\.mp4$/i, '');
 
   if (!id) {
     return NextResponse.json({ error: 'ID wajib diisi' }, { status: 400 });
